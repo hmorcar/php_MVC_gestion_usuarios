@@ -16,6 +16,8 @@ class Model{
     private string $where='';
     private array $values = [];
     private string $orderBy='';
+    private string $limit='';
+    private string $offset='';
     private string $table=''; // Definido en la clase hijo
     private string $className;
 
@@ -70,7 +72,6 @@ class Model{
         return $this->query($sql)->get();
     }
 
-
     // Consulta base a la que se irán añadiendo partes
     /**
      * @param string $className (opcional) 
@@ -90,6 +91,12 @@ class Model{
             if ($this->orderBy) {
                 $sql .= " ORDER BY {$this->orderBy}";
             }
+            if($this->limit){
+                $sql.=" LIMIT {$this->limit}";
+            }
+            if($this->offset){
+                $sql.=" OFFSET {$this->offset}";
+            }
             $this->query($sql, $this->values);
         }
         return $this->query->fetchAll(PDO::FETCH_CLASS, $this->className);
@@ -101,6 +108,15 @@ class Model{
         $this->query($sql, [$id]);
         $result = $this->query->fetchObject($this->className);
         return $result ?: null;
+    }
+    
+    public function limit(int $limit):self{
+        $this->limit=$limit;
+        return $this;
+    }
+    public function offset(int $offset):self{
+        $this->offset=$offset;
+        return $this;
     }
 
     // Se añade where a la sentencia con operador específico
@@ -188,7 +204,7 @@ class Model{
         $this->table = $table;
 
     }
-    //DEBUG iría aqui?
+   
     public function tableExists(string $table): bool{
         $sql = "SELECT COUNT(*)
             FROM INFORMATION_SCHEMA.TABLES
@@ -198,7 +214,22 @@ class Model{
         $stmt = $this->connection->prepare($sql);
         $stmt->execute([$table]);
         return $stmt->fetchColumn() > 0; 
-}
+    }
+
+    
+    public function transaccion(callable $function,...$args):string{
+         $connection=$this->getConnection();
+            try {
+                $connection->beginTransaction();
+                $function(...$args);
+                $connection->commit();
+                return 'Transacción realizada con éxito';
+            } catch (\PDOException $e) {
+                $connection->rollBack();
+                return 'No ha sido posible realizar la transacción';
+            }
+        
+    }
 
     public function setClassName($className):void
     {

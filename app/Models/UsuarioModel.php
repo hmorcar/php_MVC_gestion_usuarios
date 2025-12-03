@@ -18,6 +18,7 @@ class UsuarioModel extends Model{
         parent::setTable($this->table);
         parent::setClassName($this->className);
     }
+    
     public function añadeUsuariosConTransaccion(array $usuarios):bool{
         $connection=$this->getConnection();
         try {
@@ -32,6 +33,7 @@ class UsuarioModel extends Model{
             return false;
         }
     }
+
     /**
      * comprueba si existe la tabla usuario y si no está creada la crea llamaando al método c
      * reateTable de Model pasándole como parámetro el string con el nombre de la tabla a crear ('usuario')
@@ -54,28 +56,14 @@ class UsuarioModel extends Model{
         }
         return false;
     }
-    public function enviaPuntosConTransaccion(Usuario $usuario_origen,Usuario $usuario_destino,int $puntos):string{
-         $connection=$this->getConnection();
-        if($usuario_origen->getPuntos()>=$puntos){
-            try {
-                $connection->beginTransaction();
-                $puntos_origen=$usuario_origen->getPuntos();
-                $puntos_destino=$usuario_destino->getPuntos();
-                $puntos_origen=$puntos_origen-$puntos;
-                $puntos_destino=$puntos_destino+$puntos;
-                $this->update($usuario_origen->getId(),['puntos'=>$puntos_origen]);
-                $this->update($usuario_destino->getId(),['puntos'=>$puntos_destino]);
-                $connection->commit();
-                return 'Transacción realizada con éxito';
-            } catch (\PDOException $e) {
-                $connection->rollBack();
-                return 'No ha sido posible realizar la transacción';
-            }
-        }else{
-            return 'Cantidad de puntos insuficiente';
-        }
-        
-    }
+
+
+
+
+
+
+
+
         
    
 

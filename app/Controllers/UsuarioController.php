@@ -26,7 +26,52 @@ class UsuarioController extends Controller
         //offset se refiere a la posición desde la que se deben empezar a mostrar los resultados en una consulta paginada 
         $offset = ($paginaActual - 1) * $porPagina;
         $usuarioModel = new UsuarioModel();
+        $where=[];
+        $totalUsuarios=0;
+        $usuarioMod=new UsuarioModel();
+
+        //Campos que se buscan con LIKE
+        $camposLike = ['nombre', 'apellidos', 'usuario', 'email', 'rol'];
+        foreach ($camposLike as $campo) {
+            if (!empty($_GET[$campo])) {
+                $where[]=['columna'=>$campo,'operador'=>'LIKE','valor'=>'%' . $_GET[$campo] . '%'];
+
+            }
+        }
+        //campos que se buscan con =
+        $camposIgual=['id','fecha_nac','fecha_alta'];
+        foreach ($camposIgual as $campo) {
+            if (!empty($_GET[$campo])) {
+                $where[]=['columna'=>$campo,'operador'=>'=','valor'=>$_GET[$campo]];
+            }
+        }
+        //Rango para puntos
+        if (!empty($_GET['puntos_min'])) {
+            $where[]=['columna'=>'puntos','operador'=>'>=','valor'=>(int)$_GET['puntos_min']];
+        }
+        if (!empty($_GET['puntos_max'])) {
+            $where[]=['columna'=>'puntos','operador'=>'<=','valor'=>(int)$_GET['puntos_max']];
+        }
+        foreach($where as $w ){
+            $usuarioModel->where($w['columna'],$w['operador'],$w['valor']);
+            $usuarioMod->where($w['columna'],$w['operador'],$w['valor']);
+        }
+         // Obtenemos los usuarios resultado de la consulta paginada
+        $usuarios_pag_actual=$usuarioModel->select('*')->limit($porPagina)->offset($offset)->get();
+       
+        $resultado_count=$usuarioMod->select('COUNT(*) AS total')->get()[0];
+        $totalUsuarios = $resultado_count->total ?? 0;
+        
+        var_dump($totalUsuarios);
+        
+
+        
+        
+        
+        
+        /* 
         $condiciones = [];
+
         $parametros = [];
         //Campos que se buscan con LIKE
         $camposLike = ['nombre', 'apellidos', 'usuario', 'email', 'rol'];
@@ -61,8 +106,12 @@ class UsuarioController extends Controller
         }
         //Si el array condiciones no está vacío construye el where uniendo todos los elementos del array $condiciones en una sola cadena , separanado cada elemento con la palabra
         // ' AND ' , si está vacío el where es una cadena vacía
-        $where = !empty($condiciones) ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-        
+        //$where = !empty($condiciones) ? 'WHERE ' . implode(' AND ', $condiciones) : '';
+        if(!empty($condiciones)){
+            foreach($condiciones as $condicion){
+
+            }
+        }
         //obtenemos el total de usuarios que resultan de la consulta
         $sqlTotal = "SELECT COUNT(*) as total FROM usuario $where";
         $resultado = $usuarioModel->query($sqlTotal, $parametros)->get();
@@ -72,8 +121,9 @@ class UsuarioController extends Controller
         $sql = "SELECT * FROM usuario $where LIMIT {$porPagina} OFFSET {$offset}";
  
         $usuarios_pag_actual = $usuarioModel->query($sql, $parametros)->get();
+        */
         $totalPaginas = max(1, ceil($totalUsuarios / $porPagina));
-        //DEBUG 
+        
         $_SESSION['csrf_token_borrar']=bin2hex(random_bytes(32));
 
         return $this->view('usuarios.list', [
@@ -82,6 +132,7 @@ class UsuarioController extends Controller
         'totalPaginas' => $totalPaginas,
         // Pasar también los parámetros de búsqueda para el formulario
         'filtros' => $_GET,
+
     ]);
 
     }
@@ -471,11 +522,19 @@ class UsuarioController extends Controller
 
                 $usuarioMod1 = new UsuarioModel();
                 $usuarioMod2 = new UsuarioModel();
-                $mensaje = $usuarioMod1->enviaPuntosConTransaccion($usuario_origen, $usuario_destino, $puntos);
-                //$usuario_actualizado = $usuarioMod2->select('*')->where('usuario', $username)->get()[0];
+                //$mensaje = $usuarioMod1->enviaPuntosConTransaccion($usuario_origen, $usuario_destino, $puntos);
+                //con Método transaccion general
+                $mensaje=$usuarioMod1->transaccion(function($usuario_origen,$usuario_destino,$puntos) use ($usuarioMod1){
+                    $puntos_origen=$usuario_origen->getPuntos();
+                    $puntos_destino=$usuario_destino->getPuntos();
+                    $puntos_origen=$puntos_origen-$puntos;
+                    $puntos_destino=$puntos_destino+$puntos;
+                    $usuarioMod1->update($usuario_origen->getId(),['puntos'=>$puntos_origen]);
+                     $usuarioMod1->update($usuario_destino->getId(),['puntos'=>$puntos_destino]); 
+                }, $usuario_origen,$usuario_destino,$puntos);
+                
                 $_SESSION['mensaje_enviar_puntos'] = $mensaje;
                 return $this->redirect('/usuario/' . $usuario_origen->getUsuario());
-
             } else {
                 $mensaje = "Solicitud inválida";
                 $_SESSION['mensaje_enviar_puntos'] = $mensaje;
