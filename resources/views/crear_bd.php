@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +15,7 @@
         ?>
         <main>
             <div>
-                <h2><?php echo $data ? 'Base de datos creada con éxito' : 'Ha sido imposible crear la base de datos' ?><h2>
+                <h2><?php echo $data?$data:'No hay sido posible crear la base de datos'?><h2>
             </div>
             <div class="button_container">
                 <a href="/login"><button>Ir a login</button></a>
@@ -26,5 +25,4 @@
         <?php require_once 'footer.php' ?>
     </div>
 </body>
-
 </html>

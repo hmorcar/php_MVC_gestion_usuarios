@@ -574,6 +574,7 @@ class UsuarioController extends Controller
         $cont = 0;
         $data = false;
         $usuarioModel = new UsuarioModel();
+        $mensaje='';
 
         if (!$usuarioModel->tableExists('usuario')) {
             $usuarioModel->createTableUsuario();
@@ -602,9 +603,14 @@ class UsuarioController extends Controller
                     }
                 }
             }
-            $data = $usuarioModel->añadeUsuariosConTransaccion($usuarios);
+           // $data = $usuarioModel->añadeUsuariosConTransaccion($usuarios);
+           $mensaje=$usuarioModel->transaccion(function($usuarios) use ($usuarioModel){
+                foreach ($usuarios as $usuario) {
+                    $usuarioModel->create($usuario);   
+                }
+           },$usuarios);
         }
-        return $this->view('crear_bd', $data);
+        return $this->view('crear_bd', $mensaje);
     }
     public function sanitizaDatos(string $datos): string
     {
@@ -711,7 +717,6 @@ class UsuarioController extends Controller
                     }
                 }
             }
-
             if (empty($errores)) {
                 $usuarioModel = new UsuarioModel();
                 $usuarioModel->create(

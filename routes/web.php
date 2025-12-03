@@ -11,7 +11,7 @@ use App\Controllers\LoginController;
 // ser recuperados por un mismo controlador. Por ejemplo, /curso/:variable y /curso/ruta1 usan el mismo controlador
 // y :variable se trata como un parámetro ajeno a la ruta
 Route::get('/', [HomeController::class, 'index']);
-Route::get('/crear_bd/crear_bbdd',[UsuarioController::class,'crear_bd']);
+Route::get('/crear_bd',[UsuarioController::class,'crear_bd']);
 //Route::get('/usuario', [UsuarioController::class, 'index']);
 Route::post('/login', [LoginController::class, 'login']);
 Route::get('/login', [LoginController::class, 'showLogin']);

@@ -13,7 +13,7 @@
         <header>
             <h1>Tarea 4: MVC</h1>
             <nav>
-                <a href="/crear_bd/crear_bbdd"><button>Crear base de datos</button></a>
+                <a href="/crear_bd"><button>Crear base de datos</button></a>
             </nav>
         </header>
         <main>

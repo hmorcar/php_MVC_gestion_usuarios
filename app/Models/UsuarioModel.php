@@ -19,20 +19,6 @@ class UsuarioModel extends Model{
         parent::setClassName($this->className);
     }
     
-    public function añadeUsuariosConTransaccion(array $usuarios):bool{
-        $connection=$this->getConnection();
-        try {
-            $connection->beginTransaction();
-            foreach ($usuarios as $usuario) {
-                 $this->create($usuario);   
-            }
-            $this->getConnection()->commit();
-            return true;
-        } catch (\PDOException $e) {
-            $connection->rollBack();
-            return false;
-        }
-    }
 
     /**
      * comprueba si existe la tabla usuario y si no está creada la crea llamaando al método c
@@ -57,23 +43,4 @@ class UsuarioModel extends Model{
         return false;
     }
 
-
-
-
-
-
-
-
-        
-   
-
-    // Aquí también se podría definir las consultas que son específicas
-    // para los usuarios. Para las demás llamaremos a los métodos de la
-    // clase padre.
-    // También se podría configurar la conexión para que la información se 
-    // recuperase de otra base de datos, otro usuario, etc. cambiando:
-    // protected $db_host = 'localhost';
-    // protected $db_user = 'root';
-    // protected $db_pass = '';
-    // protected $db_name = 'mvc_database'; 
 }

@@ -3,7 +3,6 @@ namespace App\Controllers;
 use App\Models\UsuarioModel;
 use App\Models\Usuarios\Usuario;
 class LoginController extends Controller{
-    
     public function sanitizaDatos(string $datos):string{
         $datos=$datos = trim($datos);
         $datos = htmlspecialchars($datos);
@@ -13,14 +12,20 @@ class LoginController extends Controller{
         return $this->view('login');
     }
     public function login(){
+        $usuarioMod=new UsuarioModel();
+        $errores=[];
+        if (!$usuarioMod->tableExists('usuario')) {
+            $errores[] = 'La base de datos no está inicializada.Pulse el boton "Crear base de datos para crearla".';
+             return $this->view('login', ['errores' => $errores]);
+        }
         if (isset($_POST['submit']) && $_SERVER['REQUEST_METHOD']=='POST'){
             if(!empty($_POST['usuario']) && !empty($_POST['contrasenia'])){
-                $errores=[];
                 $usuario=$this->sanitizaDatos($_POST['usuario']);
                 $contrasenia=$this->sanitizaDatos($_POST['contrasenia']);
                 $usuarioModel=new UsuarioModel();
                 $usuario_valido=null;
                 $usuario_encontrado=$usuarioModel->select('*')->where('usuario', $usuario)->get();
+
                 if($usuario_encontrado){
                     foreach($usuario_encontrado as $us){
                         if(password_verify($contrasenia,$us->getContrasenia())){
