@@ -1,0 +1,5 @@
+{
+    "php.suggest.basic": false,
+    "emmet.triggerExpansionOnTab": true,
+    "emmet.showSuggestionsAsSnippets": false
+}
