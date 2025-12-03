@@ -70,6 +70,7 @@ class Model{
         return $this->query($sql)->get();
     }
 
+
     // Consulta base a la que se irán añadiendo partes
     /**
      * @param string $className (opcional) 

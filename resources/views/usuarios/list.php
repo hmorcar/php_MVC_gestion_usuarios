@@ -94,8 +94,9 @@ if (is_array($data)) {
                                         <td><?= htmlspecialchars($u->getFecha_alta_string_usuario()) ?></td>
                                         <td>
                                             <a href="/usuario/<?= urlencode($u->getUsuario()) ?>"><button class="btn_accion editar">Editar</button></a>
-                                            <form action="/usuario/<?= urlencode($u->getId()) ?>/borrar" method="post" style="display:inline;">
-                                                <button type="submit" onclick="return confirm('¿Seguro que quieres borrar este usuario?');" class="btn_accion eliminar">Eliminar</button>
+                                            <form action="/usuario/<?= urlencode($u->getId()) ?>/borrar_usuario" method="post" style="display:inline;">
+                                                <input type="hidden" name="csrf_token_borrar" value="<?php echo htmlspecialchars($_SESSION['csrf_token_borrar'])?>">
+                                                <button type="submit" name='submit' onclick="return confirm('¿Seguro que quieres borrar este usuario?');" class="btn_accion eliminar">Eliminar</button>
                                             </form>
                                         </td>
                                     </tr>

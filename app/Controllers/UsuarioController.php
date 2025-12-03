@@ -10,9 +10,17 @@ class UsuarioController extends Controller
 
     public function showList()
     {
-        if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') {
+
+        if (!isset($_SESSION['usuario']) || !isset($_SESSION['rol'])) {
+            return $this->redirect('/login');
+        }
+
+        $usuario_sesion_model=new UsuarioModel();
+        $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
+        if ($usuario_sesion  && $usuario_sesion->getRol()!=='admin') {
             return $this->error403();
         }
+
         $paginaActual = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
         $porPagina = 10;
         //offset se refiere a la posición desde la que se deben empezar a mostrar los resultados en una consulta paginada 
@@ -65,6 +73,8 @@ class UsuarioController extends Controller
  
         $usuarios_pag_actual = $usuarioModel->query($sql, $parametros)->get();
         $totalPaginas = max(1, ceil($totalUsuarios / $porPagina));
+        //DEBUG 
+        $_SESSION['csrf_token_borrar']=bin2hex(random_bytes(32));
 
         return $this->view('usuarios.list', [
         'usuarios' => $usuarios_pag_actual,
@@ -149,10 +159,11 @@ class UsuarioController extends Controller
         if (!$this->validaUsuario($username)) {
             return $this->error403();
         }
-        if ($_SESSION['usuario'] !== $username && $_SESSION['rol'] !== 'admin') {
+        $usuario_sesion_model=new UsuarioModel();
+        $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
+        if ($usuario_sesion && $usuario_sesion->getUsuario()!==$username && $usuario_sesion->getRol()!=='admin') {
             return $this->error403();
         }
-
         $usuarioModel = new UsuarioModel();
         $usuarios = $usuarioModel->select('*')->where('usuario', $username)->get();
         if (empty($usuarios)) {
@@ -162,6 +173,7 @@ class UsuarioController extends Controller
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             return $this->view('usuarios.show', [
                 'usuario' => $usuario,
+                'usuario_sesion'=>$usuario_sesion,
                 'mensaje_actualizar' => $mensaje_actualizar,
                 'errores_actualizar' => $errores_actualizar,
                 'mensaje_enviar_puntos' => $mensaje_enviar_puntos,
@@ -186,7 +198,9 @@ class UsuarioController extends Controller
         if (!$this->validaUsuario($username)) {
             return $this->error403();
         }
-        if ($_SESSION['usuario'] !== $username && $_SESSION['rol'] !== 'admin') {
+        $usuario_sesion_model=new UsuarioModel();
+        $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
+        if ($usuario_sesion && $usuario_sesion->getUsuario()!==$username && $usuario_sesion->getRol()!=='admin') {
             return $this->error403();
         }
 
@@ -279,7 +293,7 @@ class UsuarioController extends Controller
                     if (empty($_POST['contrasenia2'])) {
                         $errores[] = "Debe repetir la contraseña";
                     } else {
-                        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&._])[A-Za-z\d@$!%*#?&._]{8,40}$/', $_POST['contrasenia1'])) {
+                        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&._])[A-Za-zÁÉÍÓÚáéíóúÑñÜü\d@$!%*#?&._]{8,40}$/u', $_POST['contrasenia1'])) {
                             $errores[] = "La contraseña debe tener entre 8 y 40 caracteres y contener al menos 1 número, una mayúscula, una minúscula y un carácter especial (@$!%*#?&.)";
                         } else {
                             if ($_POST['contrasenia1'] !== $_POST['contrasenia2']) {
@@ -290,7 +304,7 @@ class UsuarioController extends Controller
                         }
                     }
                 }
-                if ($_SESSION['rol'] == 'admin') {
+                if ($usuario_sesion->getRol()==='admin') {
                     if (empty($_POST['rol'])) {
                         $rol = $usuario_encontrado->getRol();
                     } else {
@@ -354,25 +368,12 @@ class UsuarioController extends Controller
                         //incluyo los datos a mostrar en la vista en $_SESSION, que una vez utilizados borraré en show()
                         $_SESSION['mensaje_actualizar'] = $mensaje;
                         return $this->redirect('/usuario/' . $usuario_modificado->getUsuario());
-                        /*
-                        return $this->view('usuarios.show', [
-                            'usuario' => $usuario_modificado,
-                            'mensaje_actualizar' => $mensaje,
-                            'errores_actualizar' => []
-                        ]);
-                        */
+
                     } else {
                         $_SESSION['errores_actualizar'] = $errores;
                         return $this->redirect('/usuario/' . $usuario_encontrado->getUsuario());
-                        /*
-                        return $this->view('usuarios.show', [
-                            'usuario' => $usuario_encontrado,
-                            'mensaje_actualizar' => '',
-                            'errores_actualizar' => $errores
-                        ]);
-                        */
                     }
-                } else if ($_SESSION['rol'] === 'usuario') {
+                } else if ($usuario_sesion->getRol()==='usuario') {
                     if (empty($errores)) {
                         $usuarioModel->update(
                             $usuario_encontrado->getId(),
@@ -391,41 +392,19 @@ class UsuarioController extends Controller
                         $usuario_modificado = !empty($usuarios_modificados)
                             ? $usuarios_modificados[0]
                             : $usuario_encontrado;
-                        //$_SESSION['usuario'] = $usuario_modificado->getUsuario();
                         $_SESSION['mensaje_actualizar'] = $mensaje;
                         $_SESSION['usuario'] = $usuario_modificado;
                         return $this->redirect('/usuario/' . $usuario_modificado->getUsuario());
 
-                        /*
-                        return $this->view('usuarios.show', [
-                            'usuario' => $usuario_modificado,
-                            'mensaje_actualizar' => $mensaje,
-                            'errores_actualizar' => []
-                        ]);
-                        */
                     } else {
                         $_SESSION['errores_actualizar'] = $errores;
                         return $this->redirect('/usuario/' . $usuario_encontrado->getUsuario());
-                        /*
-                        return $this->view('usuarios.show', [
-                            'usuario' => $usuario_encontrado,
-                            'mensaje_actualizar' => '',
-                            'errores_actualizar' => $errores
-                        ]);
-                        */
                     }
                 }
             } else {
                 $mensaje = "Solicitud inválida";
                 $_SESSION['mensaje_actualizar'] = $mensaje;
                 return $this->redirect('/usuario/' . $usuario_encontrado->getUsuario());
-                /*
-                return $this->view('usuarios.show', [
-                    'usuario' => $usuario_encontrado,
-                    'mensaje_actualizar' => $mensaje,
-                    'errores_actualizar' => []
-                ]);
-                */
             }
         }
     }
@@ -437,10 +416,11 @@ class UsuarioController extends Controller
         if (!$this->validaUsuario($username)) {
             return $this->error403();
         }
-        if ($_SESSION['usuario'] !== $username && $_SESSION['rol'] !== 'admin') {
+        $usuario_sesion_model=new UsuarioModel();
+        $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
+        if ($usuario_sesion && $usuario_sesion->getUsuario()!==$username && $usuario_sesion->getRol()!=='admin') {
             return $this->error403();
         }
-
         if (isset($_POST['submit']) && $_SERVER['REQUEST_METHOD'] === "POST") {
             if (isset($_POST['csrf_token']) && isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
                 $usuarioModel = new UsuarioModel();
@@ -487,13 +467,6 @@ class UsuarioController extends Controller
                 if (!empty($errores)) {
                     $_SESSION['errores_enviar_puntos'] = $errores;
                     return $this->redirect('/usuario/' . $usuario_origen->getUsuario());
-                    /*
-                    return $this->view('usuarios.show', [
-                        'usuario' => $usuario_origen,
-                        'mensaje_enviar_puntos' => '',
-                        'errores_enviar_puntos' => $errores
-                    ]);
-                    */
                 }
 
                 $usuarioMod1 = new UsuarioModel();
@@ -502,13 +475,7 @@ class UsuarioController extends Controller
                 //$usuario_actualizado = $usuarioMod2->select('*')->where('usuario', $username)->get()[0];
                 $_SESSION['mensaje_enviar_puntos'] = $mensaje;
                 return $this->redirect('/usuario/' . $usuario_origen->getUsuario());
-                /*
-                return $this->view('usuarios.show', [
-                    'usuario' => $usuario_actualizado,
-                    'mensaje_enviar_puntos' => $mensaje,
-                    'errores_enviar_puntos' => []
-                ]);
-                */
+
             } else {
                 $mensaje = "Solicitud inválida";
                 $_SESSION['mensaje_enviar_puntos'] = $mensaje;
@@ -519,34 +486,30 @@ class UsuarioController extends Controller
 
     public function destroy($id)
     {
-        echo "Borrar usuario";
+        if (!isset($_SESSION['usuario']) || !isset($_SESSION['rol'])) {
+            return $this->redirect('/login');
+        }
+        if(!preg_match('/^[0-9]{1,11}$/',$id)){
+            return $this->error404();
+        }
+        $usuario_sesion_model=new UsuarioModel();
+        $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
+        if ($usuario_sesion  && $usuario_sesion->getRol()!=='admin') {
+            return $this->error403();
+        }
+        if (isset($_POST['submit']) && $_SERVER['REQUEST_METHOD'] === "POST") {
+            if (isset($_POST['csrf_token_borrar']) && isset($_SESSION['csrf_token_borrar']) && hash_equals($_SESSION['csrf_token_borrar'], $_POST['csrf_token_borrar'])) {
+                $usuarioModel=new UsuarioModel();
+                $usuario_existe=$usuarioModel->find($id);
+                if($usuario_existe){
+                    $usuarioModel->delete($usuario_existe->getId());
+                     return $this->redirect('/list/');
+                }
+           
+            }
+        }   
     }
 
-    // Función para mostrar como fuciona con ejemplos
-    public function pruebasSQLQueryBuilder()
-    {
-        // Se instancia el modelo
-        $usuarioModel = new UsuarioModel();
-        // Descomentar consultas para ver la creación
-        //$usuarioModel->all();
-        //$usuarioModel->select('columna1', 'columna2')->get();
-        // $usuarioModel->select('columna1', 'columna2')
-        //             ->where('columna1', '>', '3')
-        //             ->orderBy('columna1', 'DESC')
-        //             ->get();
-        // $usuarioModel->select('columna1', 'columna2')
-        //             ->where('columna1', '>', '3')
-        //             ->where('columna2', 'columna3')
-        //             ->where('columna2', 'columna3')
-        //             ->where('columna3', '!=', 'columna4', 'OR')
-        //             ->orderBy('columna1', 'DESC')
-        //             ->get();
-        //$usuarioModel->create(['id' => 1, 'nombre' => 'nombre1']);
-        //$usuarioModel->delete(['id' => 1]);
-        //$usuarioModel->update(['id' => 1], ['nombre' => 'NombreCambiado']);
-
-        echo "Pruebas SQL Query Builder";
-    }
     public function crear_bd()
     {
         $cont = 0;
@@ -610,7 +573,7 @@ class UsuarioController extends Controller
             $fecha_nac = '';
             $contrasenia = '';
             $rol = 'usuario';
-            //$rol='';
+           
             $errores = [];
             if (empty($_POST['nombre'])) {
                 $errores[] = "El campo nombre está vacío";
@@ -678,7 +641,7 @@ class UsuarioController extends Controller
                 if (empty($_POST['contrasenia2'])) {
                     $errores[] = "Debe repetir la contraseña";
                 } else {
-                    if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&._])[A-Za-z\d@$!%*#?&._]{8,40}$/', $_POST['contrasenia1'])) {
+                    if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&._])[A-Za-zÁÉÍÓÚáéíóúÑñÜü\d@$!%*#?&._]{8,40}$/u', $_POST['contrasenia1'])) {
                         $errores[] = "La contraseña debe tener entre 8 y 40 caracteres y contener al menos 1 número, una mayúscula, una minúscula y un carácter especial (@$!%*#?&.)";
                     } else {
                         if ($_POST['contrasenia1'] !== $_POST['contrasenia2']) {
@@ -689,17 +652,7 @@ class UsuarioController extends Controller
                     }
                 }
             }
-            /* PONEMOS ROL EN EL FORMULARIO?
-            if(empty($_POST['rol'])){
-                $rol='usuario';
-            }else{
-                if($_POST['rol']!=='admin' && $_POST['rol']!=='usuario'){
-                    $errores[]="Opción de usuario no válida";
-                }else{
-                    $rol=$_POST['rol'];
-                }
-            }
-            */
+
             if (empty($errores)) {
                 $usuarioModel = new UsuarioModel();
                 $usuarioModel->create(

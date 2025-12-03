@@ -11,7 +11,6 @@ class LoginController extends Controller{
     }
     public function showLogin(){
         return $this->view('login');
-
     }
     public function login(){
         if (isset($_POST['submit']) && $_SERVER['REQUEST_METHOD']=='POST'){
@@ -31,6 +30,10 @@ class LoginController extends Controller{
                     }
                     if ($usuario_valido){
                         session_start();
+                        /*guardo en $_SESSION['id'] el id del usuario para poder 
+                        verificar el usuario posteriormente cuando se realicen cambios en su nombre o rol
+                        */
+                        $_SESSION['id']=$usuario_valido->getId();
                         $_SESSION['usuario']=$usuario_valido->getUsuario();
                         $_SESSION['rol']=$usuario_valido->getRol();
                     }else{

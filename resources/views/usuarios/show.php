@@ -1,6 +1,7 @@
 <?php 
     if (is_array($data)) {
         $usuario = $data['usuario'];
+        $usuario_sesion=$data['usuario_sesion'];
         $mensaje_actualizar = $data['mensaje_actualizar'] ?? '';
         $errores_actualizar = $data['errores_actualizar'] ?? [];
         $mensaje_enviar_puntos = $data['mensaje_enviar_puntos'] ?? '';
@@ -29,14 +30,14 @@
             <h1>Tarea 4: MVC</h1>
             <nav>
                 <a href="/logout"><button>Cerrar sesión</button></a>
-            <?php if ($_SESSION['rol']==='admin'): ?>
+            <?php if ($usuario_sesion->getRol()==='admin'): ?>
                 <a href="/list"><button>Lista de usuarios</button></a>
             <?php endif;?>
             </nav>
         </header>
         <main>
             <section>
-                <h1><?php echo 'Bienvenid@ ' . $_SESSION['usuario'] ?></h1>
+                <h1><?php echo 'Bienvenid@ ' . $usuario_sesion->getUsuario() ?></h1>
             </section>
             <section>
                 <div>
@@ -95,7 +96,7 @@
                             <input type="password" name="contrasenia2" id="contrasenia2">
                         </div>
                         <?php
-                        if ($_SESSION['rol'] === 'admin'): ?>
+                        if ($usuario_sesion->getRol()==='admin'): ?>
                             <div class="form_item">
                                 <label for="rol">Rol</label>
                                 <div class="form_item_radio">

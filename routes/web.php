@@ -22,6 +22,7 @@ Route::get('/logout',[LoginController::class,'logout']);
 Route::post('/usuario/:username/actualizar', [UsuarioController::class, 'update']);
 Route::post('/usuario/:username/enviar_puntos', [UsuarioController::class, 'enviarPuntos']);
 Route::get('/list',[UsuarioController::class,'showlist']);
+Route::post('/usuario/:id/borrar_usuario',[UsuarioController::class,'destroy']);
 //Route::get('/usuario/nuevo', [UsuarioController::class, 'create']);
 //Route::get('/usuario/pruebas', [UsuarioController::class, 'pruebasSQLQueryBuilder']);
 //Route::post('/usuario', [UsuarioController::class, 'store']);
