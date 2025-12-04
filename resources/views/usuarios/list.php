@@ -34,26 +34,52 @@ if (is_array($data)) {
                     <h1>Buscar usuarios</h1>
                     <form action="/list" method="get" class="buscador">
                         <div class="form_row">
-                            <input type="text" name="id" placeholder="Id" value="<?= htmlspecialchars($_GET['id'] ?? '') ?>">
-                            <input type="text" name="nombre" placeholder="Nombre real" value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>">
+                            <div>
+                                <label for="id">Id</label>
+                                <input type="text" name="id" id="id" placeholder="Id" value="<?= htmlspecialchars($_GET['id'] ?? '') ?>">
+                            </div>
+                            <div>
+                                <label for="nombre">Nombre</label>
+                                <input type="text" name="nombre" id="nombre" placeholder="Nombre real" value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>">
+                            </div>
                         </div>
                         <div class="form_row">
-                            <input type="text" name="apellidos" placeholder="Apellidos" value="<?= htmlspecialchars($_GET['apellidos'] ?? '') ?>">
-                            <input type="text" name="usuario" placeholder="Usuario" value="<?= htmlspecialchars($_GET['usuario'] ?? '') ?>">
+                            <div>
+                                <label for="apellidos">Apellidos</label>
+                                <input type="text" name="apellidos" id="apellidos" placeholder="Apellidos" value="<?= htmlspecialchars($_GET['apellidos'] ?? '') ?>">
+                            </div>
+                            <div>
+                                <label for="usuario">Usuario</label>
+                                <input type="text" name="usuario" placeholder="Usuario" id="usuario" value="<?= htmlspecialchars($_GET['usuario'] ?? '') ?>">
+                            </div>
                         </div>
                         <div class="form_row">
-                            <input type="email" name="email" placeholder="Email" value="<?= htmlspecialchars($_GET['email'] ?? '') ?>">
-                            <input type="text" name="rol" placeholder="Rol" value="<?= htmlspecialchars($_GET['rol'] ?? '') ?>">
+                            <div>
+                                <label for="email">Email</label>
+                                <input type="email" name="email" placeholder="Email" id="email" value="<?= htmlspecialchars($_GET['email'] ?? '') ?>">
+                            </div>
+                            <div>
+                                <label for="rol">Rol</label>
+                                <input type="text" name="rol" placeholder="Rol" id="rol" value="<?= htmlspecialchars($_GET['rol'] ?? '') ?>">
+                            </div>
                         </div>
                         <div class="form_row">
-                            <input type="number" name="puntos_min" placeholder="Puntos mín." value="<?= htmlspecialchars($_GET['puntos_min'] ?? '') ?>">
-                            <input type="number" name="puntos_max" placeholder="Puntos máx." value="<?= htmlspecialchars($_GET['puntos_max'] ?? '') ?>">
+                            <div>
+                                <label for="puntos_min">Puntos mín.</label>
+                                <input type="number" name="puntos_min" placeholder="Puntos mín." id="puntos_min" value="<?= htmlspecialchars($_GET['puntos_min'] ?? '') ?>">
+                            </div>
+                            <div>
+                                <label for="puntos_max">Puntos máx.</label>
+                                <input type="number" name="puntos_max" placeholder="Puntos máx." id="puntos_max" value="<?= htmlspecialchars($_GET['puntos_max'] ?? '') ?>">
+                            </div>
                         </div>
                         <div class="form_row">
-                            <input type="date" name="fecha_nac" placeholder="Fecha nac." value="<?= htmlspecialchars($_GET['fecha_nac'] ?? '') ?>">
+                            <label for="fecha_nac">Fecha nacimiento</label>
+                            <input type="date" name="fecha_nac" placeholder="Fecha nac." id="fecha_nac" value="<?= htmlspecialchars($_GET['fecha_nac'] ?? '') ?>">
                         </div>
                         <div class="form_row">
-                            <input type="date" name="fecha_alta" placeholder="Fecha alta" value="<?= htmlspecialchars($_GET['fecha_alta'] ?? '') ?>">
+                            <label for ="fecha_alta">Fecha alta</label>
+                            <input type="date" name="fecha_alta" placeholder="Fecha alta" id="fecha_alta" value="<?= htmlspecialchars($_GET['fecha_alta'] ?? '') ?>">    
                         </div>
                         <div class="button_row">
                             <button type="submit">Buscar</button>
@@ -124,12 +150,10 @@ if (is_array($data)) {
                  */
             ?>
             <?php
-            // Construir query string con filtros para paginación
+            // Construyo el query string con filtros para paginación
             $queryFiltros = $_GET;
-            unset($queryFiltros['p']); // quitamos la página para agregarla dinámica
-            foreach ($queryFiltros as $key => $value) {
-                $queryFiltros[$key] = urlencode($value);
-            }
+            // Quito la página para agregarla dinámica
+            unset($queryFiltros['p']); 
             $filtrosQuery = http_build_query($queryFiltros);
             ?>
             <?php if (isset($totalPaginas) && $totalPaginas > 1): ?>
@@ -138,7 +162,7 @@ if (is_array($data)) {
                         <?php if ($i == $paginaActual): ?>
                             <span class="pagina_actual"><?= $i ?></span>
                         <?php else: ?>
-                            <a href="/list?p=<?= $i ?>"><?= $i ?></a>
+                            <a href="/list?p=<?= $i ?><?= !empty($filtrosQuery) ? '&' . $filtrosQuery : '' ?>"><?= $i ?></a>
                         <?php endif; ?>
                         <?= ($i < $totalPaginas) ? '  ' : '' ?>
                     <?php endfor; ?>
@@ -150,5 +174,4 @@ if (is_array($data)) {
         ?>
     </div>
 </body>
-
 </html>

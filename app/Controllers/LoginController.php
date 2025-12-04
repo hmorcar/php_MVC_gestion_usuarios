@@ -69,7 +69,6 @@ class LoginController extends UsuarioController{
                 return $this->view('login', ['errores'=>$errores]);
             }
         }
-        
     }
     public function vaciarSesion(){
         $_SESSION = [];

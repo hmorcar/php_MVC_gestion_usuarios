@@ -38,28 +38,56 @@ class UsuarioController extends Controller
         $where=[];
         $totalUsuarios=0;
         $usuarioMod=new UsuarioModel();
-
         //Campos que se buscan con LIKE
         $camposLike = ['nombre', 'apellidos', 'usuario', 'email', 'rol'];
         foreach ($camposLike as $campo) {
             if (!empty($_GET[$campo])) {
-                $where[]=['columna'=>$campo,'operador'=>'LIKE','valor'=>'%' . $_GET[$campo] . '%'];
-
+                //Valido los datos recibidos por GET 
+                $valor = $_GET[$campo];
+                $valido = match ($campo) {
+                    'nombre'    => $this->validarNombre($valor),
+                    'apellidos' => $this->validarApellidos($valor),
+                    'usuario'   => $this->validaUsuario($valor),
+                    'email'     => filter_var($valor, FILTER_VALIDATE_EMAIL),
+                    'rol'       => $this->validaRol($valor),
+                    default     => true,
+                };
+                if (!$valido) {
+                    //No añado el filtro si el valor del campo es inválido
+                    continue;
+                }
+                $where[]=['columna'=>$campo,'operador'=>'LIKE','valor'=>'%' . $valor . '%'];
             }
         }
         //campos que se buscan con =
         $camposIgual=['id','fecha_nac','fecha_alta'];
         foreach ($camposIgual as $campo) {
             if (!empty($_GET[$campo])) {
-                $where[]=['columna'=>$campo,'operador'=>'=','valor'=>$_GET[$campo]];
-            }
+                $valor = $_GET[$campo];
+
+                $valido = match ($campo) {
+                    'id'         => $this->validarId($valor),
+                    'fecha_nac',
+                    'fecha_alta' => $this->validarFecha($valor),
+                    default      => true,
+                };
+
+                if (!$valido) {
+                    continue;
+                }
+                    $where[]=['columna'=>$campo,'operador'=>'=','valor'=>$valor];
+                }
         }
         //Rango para puntos
         if (!empty($_GET['puntos_min'])) {
-            $where[]=['columna'=>'puntos','operador'=>'>=','valor'=>(int)$_GET['puntos_min']];
+            if($this->validaPuntos($_GET['puntos_min'])){
+                $where[]=['columna'=>'puntos','operador'=>'>=','valor'=>(int)$_GET['puntos_min']];
+            }   
         }
         if (!empty($_GET['puntos_max'])) {
-            $where[]=['columna'=>'puntos','operador'=>'<=','valor'=>(int)$_GET['puntos_max']];
+            if($this->validaPuntos($_GET['puntos_max'])){
+                $where[]=['columna'=>'puntos','operador'=>'<=','valor'=>(int)$_GET['puntos_max']];
+            }   
         }
         foreach($where as $w ){
             $usuarioModel->where($w['columna'],$w['operador'],$w['valor']);
@@ -77,9 +105,7 @@ class UsuarioController extends Controller
         'totalPaginas' => $totalPaginas,
         'filtros' => $_GET
         ]);
-
     }
-
 
 
     public function show($username)
@@ -133,7 +159,6 @@ class UsuarioController extends Controller
                 return $this->error404();
             }
             $usuario_encontrado = $usuarios_encontrados[0];
-
             if (isset($_POST['csrf_token']) && isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
                 $nombre = '';
                 $apellidos = '';
@@ -276,8 +301,6 @@ class UsuarioController extends Controller
                         $usuario_modificado = !empty($usuarios_modificados)
                             ? $usuarios_modificados[0]
                             : $usuario_encontrado;
-
-
                         //si es el propio usuario el que realiza los cambios guardo en $_SESSION 
                         //el nuevo nombre de usuario y rol para evitar que se le cierre la sesión,
                         //así evito tb que machaque la sesión del admin   
@@ -362,7 +385,6 @@ class UsuarioController extends Controller
                         }
                     }
                 }
-
                 if (empty($_POST['puntos_enviar'])) {
                     $errores[] = "El campo puntos a enviar está vacío";
                 } else if (!preg_match('/^[0-9]{1,11}$/', $_POST['puntos_enviar'])) {
@@ -389,7 +411,6 @@ class UsuarioController extends Controller
                     $usuarioMod1->update($usuario_origen->getId(),['puntos'=>$puntos_origen]);
                      $usuarioMod1->update($usuario_destino->getId(),['puntos'=>$puntos_destino]); 
                 }, $usuario_origen,$usuario_destino,$puntos);
-                
                 $_SESSION['mensaje_enviar_puntos'] = $mensaje;
                 return $this->redirect('/usuario/' . $usuario_origen->getUsuario());
             } else {
@@ -598,6 +619,13 @@ class UsuarioController extends Controller
             }
         }
     }
+    public function validarId(string $id):bool{
+        if(!preg_match('/^[0-9]{1,11}$/',$id)){
+            return false;
+        }else{
+            return true;
+        }
+    }
     public function validarNombre(string $nombre):bool{
         if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü ]{2,50}$/u',$nombre)){
             return false;
@@ -606,7 +634,7 @@ class UsuarioController extends Controller
         }
     }
     public function validarApellidos(string $apellidos):bool{
-        if(!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü ]{2,100}$/u', $_POST['apellidos'])){
+        if(!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü ]{2,100}$/u', $apellidos)){
             return false;
         }else{
             return true;
@@ -661,7 +689,6 @@ class UsuarioController extends Controller
         }
         if ($usuario_sesion->getUsuario()!==$username && $usuario_sesion->getRol()!=='admin') {
             return $this->error403(); 
-        } 
-       
+        }  
     }
 }
