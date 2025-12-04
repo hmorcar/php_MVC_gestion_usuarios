@@ -2,13 +2,11 @@
 namespace App\Models;
 use PDO;
 use PDOException;
-
 /**
  * Gestiona la conexión de la base de datos e incluye un esquema para
  * un Query Builder. Los return son ejemplo en caso de consultar la tabla
  * usuarios.
  */
-
 class Model{
     private PDO $connection;
     private $query; // Consulta a ejecutar
@@ -216,19 +214,17 @@ class Model{
         return $stmt->fetchColumn() > 0; 
     }
 
-    
     public function transaccion(callable $function,...$args):string{
-         $connection=$this->getConnection();
-            try {
-                $connection->beginTransaction();
-                $function(...$args);
-                $connection->commit();
-                return 'Transacción realizada con éxito';
-            } catch (\PDOException $e) {
-                $connection->rollBack();
-                return 'No ha sido posible realizar la transacción';
-            }
-        
+        $connection=$this->getConnection();
+        try {
+            $connection->beginTransaction();
+            $function(...$args);
+            $connection->commit();
+            return 'Transacción realizada con éxito';
+        } catch (\PDOException $e) {
+            $connection->rollBack();
+            return 'No ha sido posible realizar la transacción';
+        }
     }
 
     public function setClassName($className):void

@@ -57,21 +57,6 @@ if (is_array($data)) {
                         <label for="contrasenia2">Repita la contraseña</label>
                         <input type="password" name="contrasenia2" id="contrasenia2">
                     </div>
-                    <!-- TENGO QUE PONER EL ROL???
-                    <div class="form_item">
-                        <label for="rol">Rol</label>
-                        <div class="form_item_radio">
-                            <div>
-                                <label for="usuario">Usuario</label>
-                                <input type="radio" name="rol" id="rol_usuario" value="usuario">
-                            </div>
-                            <div>
-                                <label for="rol_admin">Administrador</label>
-                                <input type="radio" name="rol" id="rol_admin" value="admin">
-                            </div>
-                        </div>
-                    </div>
-                     -->
                     <div class="button_container">
                         <button type="submit" name="submit">Enviar</button>
                     </div>
@@ -81,15 +66,18 @@ if (is_array($data)) {
                 </div>
                 <div>
                 <?php if (!empty($mensaje)): ?>
-                    <p class="ok"><?= htmlspecialchars($mensaje) ?></p>
+                    <div>
+                        <p class="ok"><?= htmlspecialchars($mensaje) ?></p>
+                    </div>
                 <?php endif; ?>
-
                 <?php if (!empty($errores)): ?>
+                    <div>
                     <ul>
                         <?php foreach ($errores as $e): ?>
                             <li><?= htmlspecialchars($e) ?></li>
                         <?php endforeach; ?>
                     </ul>
+                    </div>
                 <?php endif; ?>
                 </div>
             </div>

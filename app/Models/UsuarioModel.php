@@ -1,7 +1,6 @@
 <?php
 namespace App\Models;
 use App\Models\Usuarios\Usuario;
-
 class UsuarioModel extends Model{
     // Nombre de la tabla que se realizarán las consultas
     private $table = 'usuario';
@@ -18,7 +17,6 @@ class UsuarioModel extends Model{
         parent::setTable($this->table);
         parent::setClassName($this->className);
     }
-    
 
     /**
      * comprueba si existe la tabla usuario y si no está creada la crea llamaando al método c

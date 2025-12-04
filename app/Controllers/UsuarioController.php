@@ -7,20 +7,29 @@ use DateTime;
 
 class UsuarioController extends Controller
 {
+    
+    /**
+     * 1.Comprueba que el usuario esté logueado y que su rol sea admin.De no ser así muestra página de error
+     * 2. Calcula la página actual y el offset
+     * 3.Calcula la cantidad total de usuarios y las páginas recesarias para mostrar 10 usuarios por página
+     * 4.Obtiene los 10 usuarios correspondientes a la página actual
+     * 5.LLama a la vista mandándole los 10 usuarios a mostrar en la página, la página actual y la cantidad total de páginas
+     * 6.Si se establecen filtros de búsqueda en el buscador obtiene los resultados correspondientes a la consulta y recalcula
+     * número de páginas necesarias para mostrarlos de forma paginada
+     * @return view la vista con los usuarios correspondientes a la página actual si el usuario está logueado
+     *  y es admin, si no devuelve una página de error
+     */
 
     public function showList()
     {
-
         if (!isset($_SESSION['usuario']) || !isset($_SESSION['rol'])) {
             return $this->redirect('/login');
         }
-
         $usuario_sesion_model=new UsuarioModel();
         $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
         if ($usuario_sesion  && $usuario_sesion->getRol()!=='admin') {
             return $this->error403();
         }
-
         $paginaActual = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
         $porPagina = 10;
         //offset se refiere a la posición desde la que se deben empezar a mostrar los resultados en una consulta paginada 
@@ -58,140 +67,20 @@ class UsuarioController extends Controller
         }
          // Obtenemos los usuarios resultado de la consulta paginada
         $usuarios_pag_actual=$usuarioModel->select('*')->limit($porPagina)->offset($offset)->get();
-       
         $resultado_count=$usuarioMod->select('COUNT(*) AS total')->get()[0];
         $totalUsuarios = $resultado_count->total ?? 0;
-        
-        var_dump($totalUsuarios);
-        
-
-        
-        
-        
-        
-        /* 
-        $condiciones = [];
-
-        $parametros = [];
-        //Campos que se buscan con LIKE
-        $camposLike = ['nombre', 'apellidos', 'usuario', 'email', 'rol'];
-        foreach ($camposLike as $campo) {
-            if (!empty($_GET[$campo])) {
-                $condiciones[] = "$campo LIKE :$campo";
-                $parametros[":$campo"] = '%' . $_GET[$campo] . '%';
-            }
-        }
-        //Campos que se buscan con =
-        if (!empty($_GET['id'])) {
-            $condiciones[] = "id = :id";
-            $parametros[':id'] = (int)$_GET['id'];
-        }
-        if (!empty($_GET['fecha_nac'])) {
-            $condiciones[] = "fecha_nac = :fecha_nac";
-            $parametros[':fecha_nac'] = $_GET['fecha_nac'];
-        }
-        if (!empty($_GET['fecha_alta'])) {
-            $condiciones[] = "fecha_alta = :fecha_alta";
-            $parametros[':fecha_alta'] = $_GET['fecha_alta'];
-        }
-
-        //Rango para puntos
-        if (!empty($_GET['puntos_min'])) {
-            $condiciones[] = "puntos >= :puntos_min";
-            $parametros[':puntos_min'] = (int)$_GET['puntos_min'];
-        }
-        if (!empty($_GET['puntos_max'])) {
-            $condiciones[] = "puntos <= :puntos_max";
-            $parametros[':puntos_max'] = (int)$_GET['puntos_max'];
-        }
-        //Si el array condiciones no está vacío construye el where uniendo todos los elementos del array $condiciones en una sola cadena , separanado cada elemento con la palabra
-        // ' AND ' , si está vacío el where es una cadena vacía
-        //$where = !empty($condiciones) ? 'WHERE ' . implode(' AND ', $condiciones) : '';
-        if(!empty($condiciones)){
-            foreach($condiciones as $condicion){
-
-            }
-        }
-        //obtenemos el total de usuarios que resultan de la consulta
-        $sqlTotal = "SELECT COUNT(*) as total FROM usuario $where";
-        $resultado = $usuarioModel->query($sqlTotal, $parametros)->get();
-        $totalUsuarios = $resultado[0]->total ?? 0;
-
-        // Obtenemos los usuarios resultado de la consulta paginada
-        $sql = "SELECT * FROM usuario $where LIMIT {$porPagina} OFFSET {$offset}";
- 
-        $usuarios_pag_actual = $usuarioModel->query($sql, $parametros)->get();
-        */
         $totalPaginas = max(1, ceil($totalUsuarios / $porPagina));
-        
         $_SESSION['csrf_token_borrar']=bin2hex(random_bytes(32));
-
         return $this->view('usuarios.list', [
         'usuarios' => $usuarios_pag_actual,
         'paginaActual' => $paginaActual,
         'totalPaginas' => $totalPaginas,
-        // Pasar también los parámetros de búsqueda para el formulario
-        'filtros' => $_GET,
-
-    ]);
-
-    }
-
-
-
-    /**
-     * 1.Comprueba que el usuario esté logueado y que su rol sea admin.De no ser así muestra página de error
-     * 2. Calcula la página actual y el offset
-     * 3.Calcula la cantidad dtotal de usuarios y las páginas recesarias para mostrar 10 usuarios por página
-     * 4.Obtiene los 10 usuarios correspondientes a la página actual
-     * 5.LLama a la vista mandándole los 10 usuarios a mostrar en la página, la página actual y la cantidad total de páginas
-     * @return view la vista con los usuarios correspondientes a la página actual si el usuario está logueado
-     *  y es admin, si no devuelve una página de error
-     */
-
-    /*
-    DEBUG-->BACKUP DE showList()
-
-
-    public function showList()
-    {
-        if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') {
-            return $this->error403();
-        }
-        $paginaActual = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
-        $porPagina = 10;
-        //offset se refiere a la posición desde la que se deben empezar a mostrar los resultados en una consulta paginada 
-        $offset = ($paginaActual - 1) * $porPagina;
-        $usuarioModel = new UsuarioModel();
-        $totalUsuarios = count($usuarioModel->all());
-        $usuarioMod = new UsuarioModel();
-        $usuarios_pag_actual = $usuarioMod
-            ->select('*')
-            ->query("SELECT * FROM usuario LIMIT {$porPagina} OFFSET {$offset}")
-            ->get();
-        $totalPaginas = max(1, ceil($totalUsuarios / $porPagina));
-        return $this->view('usuarios.list', [
-            'usuarios'      => $usuarios_pag_actual,
-            'paginaActual'  => $paginaActual,
-            'totalPaginas'  => $totalPaginas,
+        'filtros' => $_GET
         ]);
+
     }
 
-    */
 
-    public function store()
-    {
-        // Volvemos a tener acceso al modelo
-        $usuarioModel = new UsuarioModel();
-
-        // Se llama a la función correpondiente, pasando como parámetro
-        // $_POST
-        var_dump($_POST);
-        echo "Se ha enviado desde POST";
-
-        // Podríamos redirigir a donde se desee después de insertar
-        //return $this->redirect('/contacts');
-    }
 
     public function show($username)
     {
@@ -204,17 +93,10 @@ class UsuarioController extends Controller
         unset($_SESSION['errores_actualizar']);
         unset($_SESSION['mensaje_enviar_puntos']);
         unset($_SESSION['errores_enviar_puntos']);
-        if (!isset($_SESSION['usuario']) || !isset($_SESSION['rol'])) {
-            return $this->redirect('/login');
-        }
-        if (!$this->validaUsuario($username)) {
-            return $this->error403();
-        }
+        $this->requiereLogin();
         $usuario_sesion_model=new UsuarioModel();
         $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
-        if ($usuario_sesion && $usuario_sesion->getUsuario()!==$username && $usuario_sesion->getRol()!=='admin') {
-            return $this->error403();
-        }
+        $this->esUsuarioSesionOAdmin($username,$usuario_sesion);
         $usuarioModel = new UsuarioModel();
         $usuarios = $usuarioModel->select('*')->where('usuario', $username)->get();
         if (empty($usuarios)) {
@@ -233,27 +115,15 @@ class UsuarioController extends Controller
         }
     }
 
-    public function validaUsuario(string $username): bool
-    {
-        if (!preg_match('/^[a-z0-9]{2,100}$/', $username)) {
-            return false;
-        } else {
-            return true;
-        }
-    }
+    
+
+    
     public function update($username)
     {
-        if (!isset($_SESSION['usuario']) || !isset($_SESSION['rol'])) {
-            return $this->redirect('/login');
-        }
-        if (!$this->validaUsuario($username)) {
-            return $this->error403();
-        }
+        $this->requiereLogin();
         $usuario_sesion_model=new UsuarioModel();
         $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
-        if ($usuario_sesion && $usuario_sesion->getUsuario()!==$username && $usuario_sesion->getRol()!=='admin') {
-            return $this->error403();
-        }
+        $this->esUsuarioSesionOAdmin($username,$usuario_sesion);
 
         if (isset($_POST['submit']) && $_SERVER['REQUEST_METHOD'] === "POST") {
             $mensaje = '';
@@ -461,29 +331,19 @@ class UsuarioController extends Controller
     }
     public function enviarPuntos($username)
     {
-        if (!isset($_SESSION['usuario']) || !isset($_SESSION['rol'])) {
-            return $this->redirect('/login');
-        }
-        if (!$this->validaUsuario($username)) {
-            return $this->error403();
-        }
+        $this->requiereLogin();
         $usuario_sesion_model=new UsuarioModel();
         $usuario_sesion=$usuario_sesion_model->find($_SESSION['id']);
-        if ($usuario_sesion && $usuario_sesion->getUsuario()!==$username && $usuario_sesion->getRol()!=='admin') {
-            return $this->error403();
-        }
+        $this->esUsuarioSesionOAdmin($username,$usuario_sesion);
         if (isset($_POST['submit']) && $_SERVER['REQUEST_METHOD'] === "POST") {
             if (isset($_POST['csrf_token']) && isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
                 $usuarioModel = new UsuarioModel();
                 $errores = [];
                 $mensaje = "";
                 $usuario_origen = $usuarioModel->select('*')->where('usuario', $username)->get()[0];
-
                 if (!$usuario_origen) {
                     return $this->redirect('/login');
                 }
-
-
                 if (empty($_POST['usuario_destino'])) {
                     $errores[] = "El campo usuario destino está vacío";
                 } else if (!preg_match('/^[a-z0-9]{2,100}$/', $_POST['usuario_destino'])) {
@@ -509,18 +369,15 @@ class UsuarioController extends Controller
                     $errores[] = "El campo puntos debe ser un número entero válido";
                 } else {
                     $puntos = (int)$_POST['puntos_enviar'];
-
                     if ($usuario_origen->getPuntos() < $puntos) {
                         $errores[] = "Puntos insuficientes";
                     }
                 }
-
                 if (!empty($errores)) {
                     $_SESSION['errores_enviar_puntos'] = $errores;
                     return $this->redirect('/usuario/' . $usuario_origen->getUsuario());
                 }
-
-                $usuarioMod1 = new UsuarioModel();
+               $usuarioMod1 = new UsuarioModel();
                 $usuarioMod2 = new UsuarioModel();
                 //$mensaje = $usuarioMod1->enviaPuntosConTransaccion($usuario_origen, $usuario_destino, $puntos);
                 //con Método transaccion general
@@ -545,9 +402,7 @@ class UsuarioController extends Controller
 
     public function destroy($id)
     {
-        if (!isset($_SESSION['usuario']) || !isset($_SESSION['rol'])) {
-            return $this->redirect('/login');
-        }
+        $this->requiereLogin();
         if(!preg_match('/^[0-9]{1,11}$/',$id)){
             return $this->error404();
         }
@@ -564,7 +419,6 @@ class UsuarioController extends Controller
                     $usuarioModel->delete($usuario_existe->getId());
                      return $this->redirect('/list/');
                 }
-           
             }
         }   
     }
@@ -603,7 +457,7 @@ class UsuarioController extends Controller
                     }
                 }
             }
-           // $data = $usuarioModel->añadeUsuariosConTransaccion($usuarios);
+           
            $mensaje=$usuarioModel->transaccion(function($usuarios) use ($usuarioModel){
                 foreach ($usuarios as $usuario) {
                     $usuarioModel->create($usuario);   
@@ -629,7 +483,12 @@ class UsuarioController extends Controller
      */
     public function alta()
     {
-
+        $usuarioMod=new UsuarioModel();
+        $errores=[];
+        if (!$usuarioMod->tableExists('usuario')) {
+            $errores[] = 'La base de datos no está inicializada.Pulse el boton "Crear base de datos" de la página de login para crearla.';
+             return $this->view('registro', ['errores' => $errores]);
+        }
         if (isset($_POST['submit']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $nombre = '';
             $apellidos = '';
@@ -738,5 +597,71 @@ class UsuarioController extends Controller
                 return $this->view('registro', $errores);
             }
         }
+    }
+    public function validarNombre(string $nombre):bool{
+        if (!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü ]{2,50}$/u',$nombre)){
+            return false;
+        }else{
+            return true;
+        }
+    }
+    public function validarApellidos(string $apellidos):bool{
+        if(!preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü ]{2,100}$/u', $_POST['apellidos'])){
+            return false;
+        }else{
+            return true;
+        }
+    }
+    public function validaUsuario(string $username): bool
+    {
+        if (!preg_match('/^[a-z0-9]{2,100}$/', $username)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    public function validarContrasenia(string $contrasenia):bool{
+        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&._])[A-Za-zÁÉÍÓÚáéíóúÑñÜü\d@$!%*#?&._]{8,40}$/u',$contrasenia)){
+            return false;
+        }else{
+            return true;
+        }
+    }
+    public function validaPuntos(string $puntos):bool{
+        if (!preg_match('/^[0-9]{1,11}$/', $puntos)){
+            return false;
+        }else{
+            return true;
+        }
+
+    }
+    public function validaRol(string $rol):bool{
+        if($rol!=='admin' && $rol!=='usuario'){
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    public function requiereLogin(){
+        if (!isset($_SESSION['usuario']) || !isset($_SESSION['rol'])) {
+            return $this->redirect('/login');
+        }
+    }
+    public function validarFecha(string $fecha, string $formato = 'Y-m-d'): bool{
+        $date = DateTime::createFromFormat($formato, $fecha);
+        return $date && $date->format($formato) === $fecha;
+    }
+    public function esUsuarioSesionOAdmin($username ,$usuario_sesion){
+        if (!$this->validaUsuario($username)) {
+            return $this->error403(); 
+        }
+        if (!$usuario_sesion) {
+            return $this->redirect('/login');   
+        }
+        if ($usuario_sesion->getUsuario()!==$username && $usuario_sesion->getRol()!=='admin') {
+            return $this->error403(); 
+        } 
+       
     }
 }
